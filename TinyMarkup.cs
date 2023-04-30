@@ -1,12 +1,9 @@
-﻿// Code under: https://creativecommons.org/publicdomain/zero/1.0/
+// TinyMarkup is a super simple JSON-like markup language without the types, intended to be easy to understand and use.
+// Code under: https://creativecommons.org/publicdomain/zero/1.0/
 
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
-
-// TinyMarkup is a simple markup language that is easy parse and serialize.
-// Contained in one file, it is easy to understand and add to a project.
-// The syntax is similar to JSON, without the additional type information. 
 
 namespace TinyMarkup
 {
@@ -16,11 +13,15 @@ namespace TinyMarkup
         public const char closeBracketChar = ']';
     }
 
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
     public class TMElement
     {
         public string Name { get; set; }
         public TMElement(string initName) => Name = initName;
     }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     public class TMLeaf : TMElement
     {
@@ -29,6 +30,7 @@ namespace TinyMarkup
         public TMLeaf(string newName, string newData) : base(newName) => Data = newData;
     }
 
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     public class TMNode : TMElement
     {
@@ -77,6 +79,8 @@ namespace TinyMarkup
             return string.Empty;
         }
     }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     public class TMParser
     {
@@ -159,6 +163,8 @@ namespace TinyMarkup
         }
     }
 
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
     public class TMSerializer
     {
         public static string Serialize(TMElement element)
@@ -190,4 +196,7 @@ namespace TinyMarkup
             }
         }
     } // class
+    
 } // namespace
+
+
