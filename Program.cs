@@ -1,5 +1,4 @@
-﻿// Code under: https://creativecommons.org/publicdomain/zero/1.0/
-
+﻿
 using System;
 using System.Collections.Generic;
 using System.Linq;
