@@ -78,6 +78,5 @@ class Program
         {
             Console.WriteLine("The deserialized tree is not a node.");
         }
-        Console.ReadKey();
     }
 }
