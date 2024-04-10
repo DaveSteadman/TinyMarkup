@@ -99,13 +99,45 @@ public abstract class TMLeaf : TMElement
     public abstract bool TryCreate(string name, string data, out TMLeaf leaf);
 }
 
-public class TMStringLeaf : TMLeaf
+public class TMLeafString : TMLeaf
 {
     public TMStringLeaf(string newName, string newData) : base(newName, newData) {}
     public override bool TryCreate(string name, string data, out TMLeaf leaf)
     {
         leaf = new TMStringLeaf(name, data);
         return true;  // Always succeeds
+    }
+}
+
+public abstract class TMLeafInt : TMLeaf
+{
+    public int NumericData { get; private set; }
+
+
+    public TMNumericLeaf(string newName, T newData) : base(newName, newData.ToString())
+    {
+        NumericData = newData;
+    }
+
+    public override bool TryCreate(string name, string data, out TMLeaf leaf)
+    {
+        // init out variable
+        leaf = null;
+
+        // if the last character is not a "f", fail.
+        if (!content.EndsWith("f"))
+            return false;
+
+        // Remove the last 'f' character to parse the number
+        string numberPart = data.Substring(0, data.Length - 1);
+
+        // Check if the number part is a valid float number
+        if (float.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float result))
+        {
+            leaf = new TMFloatLeaf(name, result);
+            return true;
+        }
+        return false;
     }
 }
 
@@ -120,31 +152,23 @@ public class TMFloatLeaf : TMLeaf
 
     public override bool TryCreate(string name, string data, out TMLeaf leaf)
     {
-        if (float.TryParse(data, out float result))
+        // Initialise the out variable
+        leaf = null;
+
+        // If either strings are null. Fail. If the last character is not a "f", fail. 
+        if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(data)) return false;
+        if (!content.EndsWith("f")) return false;       
+
+        // Remove the last 'f' character to parse the number
+        string numberPart = data.Substring(0, data.Length - 1);
+
+        // Check if the number part is a valid float number
+        if (float.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float result))
         {
             leaf = new TMFloatLeaf(name, result);
             return true;
         }
-        leaf = null;
         return false;
-    }
-}
-
-
-public class TMFloatLeaf : TMNumericLeaf<float>
-{
-    private int Precision { get; set; }
-
-    public TMFloatLeaf(string newName, float newData, int precision = 2) : base(newName, newData)
-    {
-        NumericData = newData;
-        Precision = precision;
-        Data = newData.ToString($"F{Precision}");
-    }
-
-    public override string GetFormattedData()
-    {
-        return NumericData.ToString($"F{Precision}");
     }
 }
 
@@ -159,12 +183,18 @@ public class TMDoubleLeaf : TMLeaf
 
     public override bool TryCreate(string name, string data, out TMLeaf leaf)
     {
-        if (double.TryParse(data, out double result))
+        // init out variable
+        leaf = null;
+
+        // If either strings are null. Fail. 
+        if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(data)) return false;     
+
+        // Check if the number part is a valid float number
+        if (float.TryParse(data, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float result))
         {
-            leaf = new TMDoubleLeaf(name, result);
+            leaf = new TMFloatLeaf(name, result);
             return true;
         }
-        leaf = null;
         return false;
     }
 }
