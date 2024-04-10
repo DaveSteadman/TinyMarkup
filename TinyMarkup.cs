@@ -29,15 +29,6 @@ public class TMElement
 
 // ---------------------------------------------------------------------------------------------
 
-public class TMLeaf : TMElement
-{
-    public string Data { get; set; }
-
-    public TMLeaf(string newName, string newData) : base(newName) => Data = newData;
-}
-
-// ---------------------------------------------------------------------------------------------
-
 public class TMNode : TMElement
 {
     private List<TMElement> elementList;
@@ -58,6 +49,20 @@ public class TMNode : TMElement
     public TMLeaf CreateChildLeaf(string newLeafName, string newData)
     {
         TMLeaf newLeaf = new TMLeaf(newLeafName, newData);
+        elementList.Add(newLeaf);
+        return newLeaf;
+    }
+
+    public TMFloatLeaf CreateChildLeafFloat(string newLeafName, float newData, int precision = 2)
+    {
+        TMFloatLeaf newLeaf = new TMFloatLeaf(newLeafName, newData, precision);
+        elementList.Add(newLeaf);
+        return newLeaf;
+    }
+
+    public TMDoubleLeaf CreateChildLeafDouble(string newLeafName, double newData, int precision = 2)
+    {
+        TMDoubleLeaf newLeaf = new TMDoubleLeaf(newLeafName, newData, precision);
         elementList.Add(newLeaf);
         return newLeaf;
     }
@@ -88,6 +93,84 @@ public class TMNode : TMElement
 
 // ---------------------------------------------------------------------------------------------
 
+public abstract class TMLeaf : TMElement
+{
+    public TMLeaf(string newName, string newData) : base(newName) => Data = newData;
+    public abstract bool TryCreate(string name, string data, out TMLeaf leaf);
+}
+
+public class TMStringLeaf : TMLeaf
+{
+    public TMStringLeaf(string newName, string newData) : base(newName, newData) {}
+    public override bool TryCreate(string name, string data, out TMLeaf leaf)
+    {
+        leaf = new TMStringLeaf(name, data);
+        return true;  // Always succeeds
+    }
+}
+
+public class TMFloatLeaf : TMLeaf
+{
+    public float NumericData { get; private set; }
+
+    public TMFloatLeaf(string newName, float newData) : base(newName, newData.ToString())
+    {
+        NumericData = newData;
+    }
+
+    public override bool TryCreate(string name, string data, out TMLeaf leaf)
+    {
+        if (float.TryParse(data, out float result))
+        {
+            leaf = new TMFloatLeaf(name, result);
+            return true;
+        }
+        leaf = null;
+        return false;
+    }
+}
+
+
+public class TMFloatLeaf : TMNumericLeaf<float>
+{
+    private int Precision { get; set; }
+
+    public TMFloatLeaf(string newName, float newData, int precision = 2) : base(newName, newData)
+    {
+        NumericData = newData;
+        Precision = precision;
+        Data = newData.ToString($"F{Precision}");
+    }
+
+    public override string GetFormattedData()
+    {
+        return NumericData.ToString($"F{Precision}");
+    }
+}
+
+public class TMDoubleLeaf : TMLeaf
+{
+    public double NumericData { get; private set; }
+
+    public TMDoubleLeaf(string newName, double newData) : base(newName, newData.ToString())
+    {
+        NumericData = newData;
+    }
+
+    public override bool TryCreate(string name, string data, out TMLeaf leaf)
+    {
+        if (double.TryParse(data, out double result))
+        {
+            leaf = new TMDoubleLeaf(name, result);
+            return true;
+        }
+        leaf = null;
+        return false;
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+
 public class TMParser
 {
     public static TMElement Parse(string input)
@@ -96,36 +179,55 @@ public class TMParser
         return ReadTMElement(reader);
     }
 
+   
     private static TMElement ReadTMElement(StringReader reader)
     {
         SkipWhiteSpace(reader);
-
-        // Check for valid input and return the default if we don't see it.
+    
         if (reader.Peek() == -1)
             return TMElement.Default();
-
+    
         string name = ReadName(reader);
-
+        if (string.IsNullOrEmpty(name))
+            return TMElement.Default();
+    
         SkipWhiteSpace(reader);
+    
         if (reader.Peek() == TMConsts.openBracketChar)
         {
+            reader.Read(); // Consume the '['
             TMNode node = new TMNode(name);
-            while (reader.Peek() != TMConsts.closeBracketChar)
+            while (reader.Peek() != TMConsts.closeBracketChar && reader.Peek() != -1)
             {
                 TMElement child = ReadTMElement(reader);
-                if (child != null)
+                if (child != null && !child.IsDefault())
                     node.AddChild(child);
-                SkipWhiteSpace(reader); // Add this line to skip white spaces between elements
+                SkipWhiteSpace(reader);
             }
-
-            reader.Read(); // Consume '}'
+            if (reader.Peek() == TMConsts.closeBracketChar)
+                reader.Read(); // Consume the closing ']'
             return node;
         }
         else
         {
             string content = ReadContent(reader);
-            reader.Read(); // Consume '}'
-            return new TMLeaf(name, content);
+            if (reader.Peek() == TMConsts.closeBracketChar)
+                reader.Read(); // Consume the closing ']'
+    
+            // Try to create a leaf node, falling back through potential types
+            List<Type> leafTypes = new List<Type> { typeof(TMFloatLeaf), typeof(TMDoubleLeaf), typeof(TMStringLeaf) };
+            foreach (Type type in leafTypes)
+            {
+                TMLeaf leaf;
+                var instance = Activator.CreateInstance(type, new object[] { name, content }) as TMLeaf;
+                if (instance != null && instance.TryCreate(name, content, out leaf))
+                {
+                    return leaf;
+                }
+            }
+    
+            // Fall back to a string leaf if no other types matched
+            return new TMStringLeaf(name, content);
         }
     }
 
@@ -199,7 +301,11 @@ public class TMSerializer
         }
         else if (element is TMLeaf leaf)
         {
-            sb.Append($"{TMConsts.openBracketChar}{TMConsts.openBracketChar}{leaf.Name}{TMConsts.closeBracketChar}{leaf.Data}{TMConsts.closeBracketChar}");
+            string dataRepresentation = leaf.Data;
+            if (leaf is TMFloatLeaf)
+                dataRepresentation += "f";
+
+            sb.Append($"{TMConsts.openBracketChar}{TMConsts.openBracketChar}{leaf.Name}{TMConsts.closeBracketChar}{dataRepresentation}{TMConsts.closeBracketChar}");
         }
     }
 } // class
