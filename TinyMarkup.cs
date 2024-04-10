@@ -101,10 +101,10 @@ public abstract class TMLeaf : TMElement
 
 public class TMLeafString : TMLeaf
 {
-    public TMStringLeaf(string newName, string newData) : base(newName, newData) {}
+    public TMLeafString(string newName, string newData) : base(newName, newData) {}
     public override bool TryCreate(string name, string data, out TMLeaf leaf)
     {
-        leaf = new TMStringLeaf(name, data);
+        leaf = new TMLeafString(name, data);
         return true;  // Always succeeds
     }
 }
@@ -245,7 +245,7 @@ public class TMParser
                 reader.Read(); // Consume the closing ']'
     
             // Try to create a leaf node, falling back through potential types
-            List<Type> leafTypes = new List<Type> { typeof(TMFloatLeaf), typeof(TMDoubleLeaf), typeof(TMStringLeaf) };
+            List<Type> leafTypes = new List<Type> { typeof(TMFloatLeaf), typeof(TMDoubleLeaf), typeof(TMLeafString) };
             foreach (Type type in leafTypes)
             {
                 TMLeaf leaf;
@@ -257,7 +257,7 @@ public class TMParser
             }
     
             // Fall back to a string leaf if no other types matched
-            return new TMStringLeaf(name, content);
+            return new TMLeafString(name, content);
         }
     }
 
