@@ -109,12 +109,11 @@ public class TMLeafString : TMLeaf
     }
 }
 
-public abstract class TMLeafInt : TMLeaf
+public class TMLeafInt : TMLeaf
 {
     public int NumericData { get; private set; }
 
-
-    public TMNumericLeaf(string newName, T newData) : base(newName, newData.ToString())
+    public TMLeafInt(string newName, string newData) : base(newName, newData.ToString())
     {
         NumericData = newData;
     }
@@ -124,28 +123,24 @@ public abstract class TMLeafInt : TMLeaf
         // init out variable
         leaf = null;
 
-        // if the last character is not a "f", fail.
-        if (!content.EndsWith("f"))
-            return false;
-
-        // Remove the last 'f' character to parse the number
-        string numberPart = data.Substring(0, data.Length - 1);
+        // If either strings are null. Fail.
+        if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(data)) return false;
 
         // Check if the number part is a valid float number
-        if (float.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float result))
+        if (int.TryParse(data, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int result))
         {
-            leaf = new TMFloatLeaf(name, result);
+            leaf = new TMLeafInt(name, result);
             return true;
         }
         return false;
     }
 }
 
-public class TMFloatLeaf : TMLeaf
+public class TMLeafFloat : TMLeaf
 {
     public float NumericData { get; private set; }
 
-    public TMFloatLeaf(string newName, float newData) : base(newName, newData.ToString())
+    public TMLeafFloat(string newName, float newData) : base(newName, newData.ToString())
     {
         NumericData = newData;
     }
@@ -157,7 +152,7 @@ public class TMFloatLeaf : TMLeaf
 
         // If either strings are null. Fail. If the last character is not a "f", fail. 
         if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(data)) return false;
-        if (!content.EndsWith("f")) return false;       
+        if (!data.EndsWith("f")) return false;
 
         // Remove the last 'f' character to parse the number
         string numberPart = data.Substring(0, data.Length - 1);
@@ -165,18 +160,18 @@ public class TMFloatLeaf : TMLeaf
         // Check if the number part is a valid float number
         if (float.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float result))
         {
-            leaf = new TMFloatLeaf(name, result);
+            leaf = new TMLeafFloat(name, result);
             return true;
         }
         return false;
     }
 }
 
-public class TMDoubleLeaf : TMLeaf
+public class TMLeafDouble : TMLeaf
 {
     public double NumericData { get; private set; }
 
-    public TMDoubleLeaf(string newName, double newData) : base(newName, newData.ToString())
+    public TMLeafDouble(string newName, double newData) : base(newName, newData.ToString())
     {
         NumericData = newData;
     }
@@ -187,12 +182,12 @@ public class TMDoubleLeaf : TMLeaf
         leaf = null;
 
         // If either strings are null. Fail. 
-        if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(data)) return false;     
+        if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(data)) return false;
 
         // Check if the number part is a valid float number
-        if (float.TryParse(data, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float result))
+        if (double.TryParse(data, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double result))
         {
-            leaf = new TMFloatLeaf(name, result);
+            leaf = new TMLeafDouble(name, result);
             return true;
         }
         return false;
@@ -245,7 +240,7 @@ public class TMParser
                 reader.Read(); // Consume the closing ']'
     
             // Try to create a leaf node, falling back through potential types
-            List<Type> leafTypes = new List<Type> { typeof(TMFloatLeaf), typeof(TMDoubleLeaf), typeof(TMLeafString) };
+            List<Type> leafTypes = new List<Type> { typeof(TMLeafInt), typeof(TMLeafFloat), typeof(TMLeafDouble), typeof(TMLeafString) };
             foreach (Type type in leafTypes)
             {
                 TMLeaf leaf;
