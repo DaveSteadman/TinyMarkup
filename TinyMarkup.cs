@@ -46,48 +46,60 @@ public class TMNode : TMElement
         return newNode;
     }
 
-    public TMLeaf CreateChildLeaf(string newLeafName, string newData)
+    public TMLeaf CreateChildLeafString(string newLeafName, string newData)
     {
-        TMLeaf newLeaf = new TMLeaf(newLeafName, newData);
+        TMLeaf newLeaf = new TMLeafString(newLeafName, newData);
         elementList.Add(newLeaf);
         return newLeaf;
     }
 
-    public TMFloatLeaf CreateChildLeafFloat(string newLeafName, float newData, int precision = 2)
+    public TMLeafFloat CreateChildLeafFloat(string newLeafName, float newData, int precision = 2)
     {
-        TMFloatLeaf newLeaf = new TMFloatLeaf(newLeafName, newData, precision);
+        TMLeafFloat newLeaf = new TMLeafFloat(newLeafName, newData);
         elementList.Add(newLeaf);
         return newLeaf;
     }
 
-    public TMDoubleLeaf CreateChildLeafDouble(string newLeafName, double newData, int precision = 2)
+    public TMLeafDouble CreateChildLeafDouble(string newLeafName, double newData, int precision = 2)
     {
-        TMDoubleLeaf newLeaf = new TMDoubleLeaf(newLeafName, newData, precision);
+        TMLeafDouble newLeaf = new TMLeafDouble(newLeafName, newData);
+        elementList.Add(newLeaf);
+        return newLeaf;
+    }
+
+    public TMLeafInt CreateChildLeafInt(string newLeafName, int newData)
+    {
+        TMLeafInt newLeaf = new TMLeafInt(newLeafName, newData);
         elementList.Add(newLeaf);
         return newLeaf;
     }
 
     public void AddChild(TMElement newChild) { elementList.Add(newChild); }
 
-    public string FindLeafData(string leafName)
-    {
-        return FindLeafDataRecursive(this, leafName);
-    }
 
-    private string FindLeafDataRecursive(TMNode node, string leafName)
+    public TMLeaf? FindLeaf(string leafName)
     {
         foreach (TMElement element in node.elementList)
         {
             if ((element is TMLeaf leaf) && (leaf.Name == leafName))
-                return leaf.Data;
+                return leaf;
+        }
+    }
+    
+    private TMLeaf? FindLeafRecursive(TMNode node, string leafName)
+    {
+        foreach (TMElement element in node.elementList)
+        {
+            if ((element is TMLeaf leaf) && (leaf.Name == leafName))
+                return leaf;
             else if (element is TMNode childNode)
             {
-                string result = FindLeafDataRecursive(childNode, leafName);
-                if (result != string.Empty)
+                TMLeaf? result = FindLeafRecursive(childNode, leafName);
+                if (result != null)
                     return result;
             }
         }
-        return string.Empty;
+        return null;
     }
 }
 
@@ -95,28 +107,29 @@ public class TMNode : TMElement
 
 public abstract class TMLeaf : TMElement
 {
-    public TMLeaf(string newName, string newData) : base(newName) => Data = newData;
+    public TMLeaf(string newName) : base(newName) { }
     public abstract bool TryCreate(string name, string data, out TMLeaf leaf);
+    public abstract string DataString();
 }
 
 public class TMLeafString : TMLeaf
 {
-    public TMLeafString(string newName, string newData) : base(newName, newData) {}
+    public string Data { get; private set; }
+
+    public TMLeafString(string newName, string newData) : base(newName) => Data = newData;
     public override bool TryCreate(string name, string data, out TMLeaf leaf)
     {
         leaf = new TMLeafString(name, data);
         return true;  // Always succeeds
     }
+    public override string DataString() => Data;
 }
 
 public class TMLeafInt : TMLeaf
 {
     public int NumericData { get; private set; }
 
-    public TMLeafInt(string newName, string newData) : base(newName, newData.ToString())
-    {
-        NumericData = newData;
-    }
+    public TMLeafInt(string newName, int newData) : base(newName) => NumericData = newData;
 
     public override bool TryCreate(string name, string data, out TMLeaf leaf)
     {
@@ -134,16 +147,14 @@ public class TMLeafInt : TMLeaf
         }
         return false;
     }
+    public override string DataString() => NumericData.ToString();
 }
 
 public class TMLeafFloat : TMLeaf
 {
     public float NumericData { get; private set; }
 
-    public TMLeafFloat(string newName, float newData) : base(newName, newData.ToString())
-    {
-        NumericData = newData;
-    }
+    public TMLeafFloat(string newName, float newData) : base(newName) => NumericData = newData;
 
     public override bool TryCreate(string name, string data, out TMLeaf leaf)
     {
@@ -165,16 +176,15 @@ public class TMLeafFloat : TMLeaf
         }
         return false;
     }
+
+    public override string DataString() => NumericData.ToString() + "f";
 }
 
 public class TMLeafDouble : TMLeaf
 {
     public double NumericData { get; private set; }
 
-    public TMLeafDouble(string newName, double newData) : base(newName, newData.ToString())
-    {
-        NumericData = newData;
-    }
+    public TMLeafDouble(string newName, double newData) : base(newName) => NumericData = newData;
 
     public override bool TryCreate(string name, string data, out TMLeaf leaf)
     {
@@ -192,6 +202,8 @@ public class TMLeafDouble : TMLeaf
         }
         return false;
     }
+
+    public override string DataString() => NumericData.ToString();
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -326,8 +338,8 @@ public class TMSerializer
         }
         else if (element is TMLeaf leaf)
         {
-            string dataRepresentation = leaf.Data;
-            if (leaf is TMFloatLeaf)
+            string dataRepresentation = leaf.DataString();
+            if (leaf is TMLeafFloat)
                 dataRepresentation += "f";
 
             sb.Append($"{TMConsts.openBracketChar}{TMConsts.openBracketChar}{leaf.Name}{TMConsts.closeBracketChar}{dataRepresentation}{TMConsts.closeBracketChar}");

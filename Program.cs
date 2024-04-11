@@ -50,10 +50,10 @@ class Program
         TMNode childNode1 = rootNode.CreateChildNode("Child1");
         TMNode childNode2 = rootNode.CreateChildNode("Child2");
 
-        childNode1.CreateChildLeaf("Leaf1", " A + b = c");
-        childNode1.CreateChildLeaf("Leaf2", "general statement");
+        childNode1.CreateChildLeafString("Leaf1", " A + b = c");
+        childNode1.CreateChildLeafString("Leaf2", "general statement");
         TMNode childNode3 = childNode2.CreateChildNode("Child3");
-        childNode3.CreateChildLeaf("Leaf3", "'string literal'");
+        childNode3.CreateChildLeafString("Leaf3", "'string literal'");
 
         // Serialize the tree structure
         string serializedTree = TMSerializer.Serialize(rootNode);
@@ -71,7 +71,7 @@ class Program
         // Find a nested leaf data item
         if (deserializedTree is TMNode deserializedRootNode)
         {
-            string leafData = deserializedRootNode.FindLeafData("Leaf3");
+            string leafData = deserializedRootNode.("Leaf3");
             Console.WriteLine($"\nFound nested leaf data item: {leafData}");
         }
         else
